@@ -164,11 +164,24 @@
             </div>
 
             <div class="row">
-                <div class="form-group">
-                    <label>Serviço / Valor</label>
-                    <input type="text" id="finalService" placeholder="O que será feito?" required style="margin-bottom: 8px;">
-                    <input type="number" id="servicePrice" placeholder="Valor R$" required>
+                <div class="form-group" style="flex: 2;">
+                    <label>Serviço Realizado</label>
+                    <input type="text" id="finalService" placeholder="O que será feito?" required>
                 </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="servicePrice" placeholder="0.00" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Forma de Pagamento</label>
+                <select id="paymentMethod">
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                </select>
             </div>
 
             <button type="submit" class="btn btn-primary">GERAR ORDEM DE SERVIÇO</button>
@@ -182,7 +195,7 @@
         </header>
 
         <button class="btn btn-primary" onclick="generatePDF()">📥 Baixar PDF da OS</button>
-        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar todas as informações via WhatsApp</button>
+        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar informações via WhatsApp</button>
         <button class="btn btn-outline" onclick="window.location.reload()">➕ Criar Nova OS</button>
     </div>
 
@@ -211,6 +224,7 @@
             <h3>SERVIÇO A REALIZAR</h3>
             <p><strong>Descrição:</strong> <span id="pdf-service"></span></p>
             <p><strong>VALOR TOTAL:</strong> R$ <span id="pdf-price"></span></p>
+            <p><strong>PAGAMENTO:</strong> <span id="pdf-payment"></span></p>
         </div>
         
         <div class="pdf-section" id="pdf-image-container" style="display: none; text-align: center;">
@@ -223,36 +237,59 @@
         let pattern = [];
         let base64Image = "";
 
-        // Lógica das bolinhas
+        // Lógica das bolinhas - Captura e salva em Array
         document.querySelectorAll('.dot').forEach(dot => {
             dot.addEventListener('click', function() {
                 const id = this.dataset.id;
                 if (!pattern.includes(id)) {
                     pattern.push(id);
                     this.classList.add('active');
+                    this.innerText = pattern.length; // Mostra o número da sequência na tela
                 }
             });
         });
 
         function resetPattern() {
             pattern = [];
-            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.dot').forEach(d => {
+                d.classList.remove('active');
+                d.innerText = d.dataset.id; // Restaura o número original
+            });
         }
 
-        // Processar Imagem e aplicar o fix para o PDF
+        // Compressor de Imagem (Corrige o Bug da foto sumindo no PDF)
         function handleImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    base64Image = e.target.result;
-                    
-                    // Mostra na tela de formulário
-                    document.getElementById('imagePreview').src = base64Image;
-                    document.getElementById('imagePreview').style.display = 'block';
-                    
-                    // Passa para o PDF e garante que a div está visível
-                    document.getElementById('pdf-image').src = base64Image;
-                    document.getElementById('pdf-image-container').style.display = 'block';
+                    const img = new Image();
+                    img.onload = function() {
+                        // Cria um canvas para redimensionar a imagem
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600; // Tamanho ideal para PDF e performance
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > MAX_WIDTH) {
+                            height = Math.round((height * MAX_WIDTH) / width);
+                            width = MAX_WIDTH;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Converte a imagem comprimida em Base64
+                        base64Image = canvas.toDataURL('image/jpeg', 0.7);
+                        
+                        // Exibe a imagem na tela e prepara no PDF
+                        document.getElementById('imagePreview').src = base64Image;
+                        document.getElementById('imagePreview').style.display = 'block';
+                        document.getElementById('pdf-image').src = base64Image;
+                        document.getElementById('pdf-image-container').style.display = 'block';
+                    }
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -266,15 +303,21 @@
             document.getElementById('pdf-shopPhone').innerText = document.getElementById('shopPhone').value;
             document.getElementById('pdf-clientName').innerText = document.getElementById('clientName').value;
             document.getElementById('pdf-clientWpp').innerText = document.getElementById('clientWpp').value;
-            document.getElementById('pdf-clientAddress').innerText = document.getElementById('clientAddress').value;
+            document.getElementById('pdf-clientAddress').innerText = document.getElementById('clientAddress').value || "Não informado";
             document.getElementById('pdf-delivery').innerText = document.getElementById('deliveryType').value;
             document.getElementById('pdf-pass').innerText = document.getElementById('phonePass').value || "Não informado";
-            document.getElementById('pdf-pattern').innerText = pattern.join('→') || "Não informado";
+            
+            // Corrige o padrão (Junta os números clicados com setas)
+            document.getElementById('pdf-pattern').innerText = pattern.length > 0 ? pattern.join(' ➔ ') : "Não informado";
+            
             document.getElementById('pdf-demand').innerText = document.getElementById('serviceDemand').value;
-            document.getElementById('pdf-status').innerText = document.getElementById('deviceStatus').value;
-            document.getElementById('pdf-desc').innerText = document.getElementById('problemDesc').value;
+            document.getElementById('pdf-status').innerText = document.getElementById('deviceStatus').value || "Não detalhado";
+            document.getElementById('pdf-desc').innerText = document.getElementById('problemDesc').value || "Não detalhado";
             document.getElementById('pdf-service').innerText = document.getElementById('finalService').value;
             document.getElementById('pdf-price').innerText = document.getElementById('servicePrice').value;
+            
+            // Atribui o método de pagamento
+            document.getElementById('pdf-payment').innerText = document.getElementById('paymentMethod').value;
 
             // Trocar tela
             document.getElementById('form-screen').classList.remove('active-screen');
@@ -282,7 +325,7 @@
             window.scrollTo(0,0);
         });
 
-        // Função Gerar PDF (Com correção de renderização de imagem)
+        // Função Gerar PDF
         function generatePDF() {
             const element = document.getElementById('pdf-template');
             const clientName = document.getElementById('clientName').value || "Cliente";
@@ -295,24 +338,22 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            // Forçar visibilidade temporária
+            // Exibe o PDF por baixo dos panos só para fotografar e depois esconde
             element.style.position = "static";
             element.style.left = "0";
             
-            // O delay (500ms) garante que imagens pesadas da câmera carreguem totalmente na DOM antes do PDF ser gerado
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save().then(() => {
                     element.style.position = "absolute";
                     element.style.left = "-9999px";
                 });
-            }, 500);
+            }, 300);
         }
 
         // Função Enviar WhatsApp
         function sendWhatsApp() {
             const name = document.getElementById('clientName').value;
             const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
-            // Verifica se o usuário já digitou o 55, senão adiciona
             const wpp = rawWpp.startsWith('55') ? rawWpp : `55${rawWpp}`;
             
             const demand = document.getElementById('serviceDemand').value;
@@ -320,12 +361,14 @@
             const price = document.getElementById('servicePrice').value;
             const type = document.getElementById('deliveryType').value;
             const shop = document.getElementById('shopPhone').value;
+            const payment = document.getElementById('paymentMethod').value;
 
             const msg = `*RESUMO DA ORDEM DE SERVIÇO*%0A%0A` +
                         `*Cliente:* ${name}%0A` +
                         `*Aparelho/Demanda:* ${demand}%0A` +
                         `*Serviço:* ${service}%0A` +
                         `*Valor:* R$ ${price}%0A` +
+                        `*Forma de Pagto:* ${payment}%0A` +
                         `*Status:* ${type}%0A%0A` +
                         `_Sua ordem de serviço foi registrada com sucesso! Para dúvidas ligue: ${shop}_`;
 
