@@ -72,7 +72,6 @@
         }
         .pdf-header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
         .pdf-section { margin-bottom: 15px; }
-        .pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         /* Telas */
         .screen { display: none; }
@@ -213,9 +212,10 @@
             <p><strong>Descrição:</strong> <span id="pdf-service"></span></p>
             <p><strong>VALOR TOTAL:</strong> R$ <span id="pdf-price"></span></p>
         </div>
-        <div class="pdf-section">
-            <p><strong>Anexo Fotográfico:</strong></p>
-            <img id="pdf-image" style="max-width: 300px; margin-top: 10px;">
+        
+        <div class="pdf-section" id="pdf-image-container" style="display: none; text-align: center;">
+            <p style="text-align: left;"><strong>Anexo Fotográfico:</strong></p>
+            <img id="pdf-image" style="max-width: 100%; max-height: 400px; margin-top: 10px; border-radius: 4px; object-fit: contain;">
         </div>
     </div>
 
@@ -239,15 +239,20 @@
             document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
         }
 
-        // Processar Imagem
+        // Processar Imagem e aplicar o fix para o PDF
         function handleImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     base64Image = e.target.result;
+                    
+                    // Mostra na tela de formulário
                     document.getElementById('imagePreview').src = base64Image;
                     document.getElementById('imagePreview').style.display = 'block';
+                    
+                    // Passa para o PDF e garante que a div está visível
                     document.getElementById('pdf-image').src = base64Image;
+                    document.getElementById('pdf-image-container').style.display = 'block';
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -277,31 +282,39 @@
             window.scrollTo(0,0);
         });
 
-        // Função Gerar PDF
+        // Função Gerar PDF (Com correção de renderização de imagem)
         function generatePDF() {
             const element = document.getElementById('pdf-template');
+            const clientName = document.getElementById('clientName').value || "Cliente";
+            
             const opt = {
                 margin: 10,
-                filename: `OS_${document.getElementById('clientName').value}.pdf`,
+                filename: `OS_${clientName}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, logging: false, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            // Forçar visibilidade temporária para o renderizador
+            // Forçar visibilidade temporária
             element.style.position = "static";
             element.style.left = "0";
             
-            html2pdf().set(opt).from(element).save().then(() => {
-                element.style.position = "absolute";
-                element.style.left = "-9999px";
-            });
+            // O delay (500ms) garante que imagens pesadas da câmera carreguem totalmente na DOM antes do PDF ser gerado
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    element.style.position = "absolute";
+                    element.style.left = "-9999px";
+                });
+            }, 500);
         }
 
         // Função Enviar WhatsApp
         function sendWhatsApp() {
             const name = document.getElementById('clientName').value;
-            const wpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
+            const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
+            // Verifica se o usuário já digitou o 55, senão adiciona
+            const wpp = rawWpp.startsWith('55') ? rawWpp : `55${rawWpp}`;
+            
             const demand = document.getElementById('serviceDemand').value;
             const service = document.getElementById('finalService').value;
             const price = document.getElementById('servicePrice').value;
@@ -316,7 +329,7 @@
                         `*Status:* ${type}%0A%0A` +
                         `_Sua ordem de serviço foi registrada com sucesso! Para dúvidas ligue: ${shop}_`;
 
-            window.open(`https://api.whatsapp.com/send?phone=55${wpp}&text=${msg}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`, '_blank');
         }
     </script>
 </body>
