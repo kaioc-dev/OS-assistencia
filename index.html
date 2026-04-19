@@ -3,277 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ordem de Serviço - Assistência Técnica</title>
+    <title>Sistema de Ordem de Serviço</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
-            --bg-color: #0b0c10;
-            --surface-color: #1f2833;
-            --primary-color: #66fcf1;
-            --secondary-color: #45a29e;
-            --text-color: #c5c6c7;
-            --text-light: #ffffff;
-            --danger: #ff4c4c;
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 20px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 15px; }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: var(--surface-color);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
-        h1, h2 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px rgba(102, 252, 241, 0.3);
+        header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid var(--bg); padding-bottom: 15px; }
+        h1 { font-size: 1.5rem; color: var(--primary); }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        
+        input, select, textarea {
+            width: 100%; padding: 12px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 1rem; background: #fff;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+        .row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .row > div { flex: 1; }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: var(--text-light);
-            font-weight: 500;
+        /* Padrão de Bolinhas */
+        .pattern-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 15px; max-width: 200px; margin: 10px auto;
         }
-
-        input[type="text"],
-        input[type="tel"],
-        input[type="email"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--secondary-color);
-            color: var(--text-light);
-            border-radius: 6px;
-            outline: none;
-            transition: 0.3s;
+        .dot {
+            width: 50px; height: 50px; border: 2px solid var(--border);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; font-weight: bold;
+            color: #cbd5e1; transition: 0.2s;
         }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 8px rgba(102, 252, 241, 0.4);
-        }
-
-        .radio-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        .radio-group label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-weight: normal;
-        }
-
-        /* Pattern Lock Styles */
-        .pattern-lock-container {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-gap: 15px;
-            justify-content: center;
-            margin: 15px 0;
-        }
-
-        .pattern-dot {
-            width: 60px;
-            height: 60px;
-            background-color: var(--bg-color);
-            border: 2px solid var(--secondary-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: transparent;
-            transition: 0.2s;
-            user-select: none;
-        }
-
-        .pattern-dot.active {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: var(--bg-color);
-            font-weight: bold;
-            box-shadow: 0 0 10px var(--primary-color);
-        }
-
-        .file-upload {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
+        .dot.active { background: var(--primary); color: white; border-color: var(--primary); }
 
         .btn {
-            width: 100%;
-            padding: 15px;
-            background-color: transparent;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.3s;
-            margin-top: 10px;
+            width: 100%; padding: 15px; border: none; border-radius: 6px;
+            font-size: 1rem; font-weight: bold; cursor: pointer;
+            transition: 0.3s; margin-top: 10px;
         }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
 
-        .btn:hover, .btn.solid {
-            background-color: var(--primary-color);
-            color: var(--bg-color);
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.6);
-        }
+        #imagePreview { max-width: 100%; border-radius: 6px; margin-top: 10px; display: none; }
 
-        .btn.whatsapp {
-            border-color: #25D366;
-            color: #25D366;
+        /* Estilo do PDF Oculto */
+        #pdf-template {
+            position: absolute; left: -9999px; top: -9999px;
+            width: 180mm; padding: 20px; color: #000; background: #fff;
         }
+        .pdf-header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+        .pdf-section { margin-bottom: 15px; }
+        .pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .btn.whatsapp:hover {
-            background-color: #25D366;
-            color: #fff;
-            box-shadow: 0 0 15px rgba(37, 211, 102, 0.6);
-        }
-
-        #imagePreview {
-            max-width: 100%;
-            margin-top: 10px;
-            border-radius: 8px;
-            display: none;
-            border: 1px solid var(--secondary-color);
-        }
-
-        /* Screens */
-        #successScreen, #pdfContent {
-            display: none;
-        }
-
-        /* PDF Styles - Used only for the generated document */
-        #pdfContent {
-            background: #fff;
-            color: #000;
-            padding: 40px;
-            font-family: Arial, sans-serif;
-            border: 2px solid #000;
-        }
-        
-        #pdfContent h1 {
-            color: #000;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            text-shadow: none;
-        }
-
-        .pdf-row {
-            margin-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-
-        .pdf-row strong {
-            color: #333;
-        }
-
-        .pdf-image {
-            max-width: 300px;
-            margin-top: 10px;
-        }
+        /* Telas */
+        .screen { display: none; }
+        .active-screen { display: block; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="formScreen">
-        <h1>Assistência Técnica</h1>
-        <h2>Ordem de Serviço</h2>
+    <div id="form-screen" class="container screen active-screen">
+        <header>
+            <h1>Assistência Técnica</h1>
+            <p>Nova Ordem de Serviço</p>
+        </header>
 
         <form id="osForm">
-            <div class="form-group">
-                <label>Nome da Assistência (Opcional):</label>
-                <input type="text" id="shopName" placeholder="Assistência Técnica">
-            </div>
-            <div class="form-group">
-                <label>Telefone da Assistência:</label>
-                <input type="tel" id="shopPhone" placeholder="(00) 00000-0000">
+            <div class="row">
+                <div class="form-group">
+                    <label>Telefone da Assistência</label>
+                    <input type="tel" id="shopPhone" placeholder="(00) 00000-0000" required>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Nome do Cliente:</label>
+                <label>Nome do Cliente</label>
                 <input type="text" id="clientName" required>
             </div>
-            <div class="form-group">
-                <label>WhatsApp do Cliente:</label>
-                <input type="tel" id="clientWpp" placeholder="Ex: 5511999999999" required>
-            </div>
-            <div class="form-group">
-                <label>Email do Cliente:</label>
-                <input type="email" id="clientEmail">
-            </div>
-            <div class="form-group">
-                <label>Entrega ou Retirada?</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="delivery" value="Entrega" checked> Entrega</label>
-                    <label><input type="radio" name="delivery" value="Retirada"> Retirada</label>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>WhatsApp do Cliente</label>
+                    <input type="tel" id="clientWpp" placeholder="DDD + Número" required>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Endereço do Cliente:</label>
-                <input type="text" id="clientAddress">
+                <div class="form-group">
+                    <label>Entrega ou Retirada?</label>
+                    <select id="deliveryType">
+                        <option value="Retirada na Loja">Retirada na Loja</option>
+                        <option value="Entrega no Endereço">Entrega no Endereço</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Senha do Celular (Texto):</label>
-                <input type="text" id="phonePassword" placeholder="Deixe em branco se for padrão">
+                <label>Email e Endereço</label>
+                <input type="email" id="clientEmail" placeholder="Email (opcional)" style="margin-bottom: 8px;">
+                <textarea id="clientAddress" placeholder="Endereço completo" rows="2"></textarea>
             </div>
-            
-            <div class="form-group">
-                <label>Ou Senha Padrão (Toque na ordem para gravar):</label>
-                <div class="pattern-lock-container" id="patternLock">
-                    <div class="pattern-dot" data-val="1">1</div>
-                    <div class="pattern-dot" data-val="2">2</div>
-                    <div class="pattern-dot" data-val="3">3</div>
-                    <div class="pattern-dot" data-val="4">4</div>
-                    <div class="pattern-dot" data-val="5">5</div>
-                    <div class="pattern-dot" data-val="6">6</div>
-                    <div class="pattern-dot" data-val="7">7</div>
-                    <div class="pattern-dot" data-val="8">8</div>
-                    <div class="pattern-dot" data-val="9">9</div>
+
+            <div class="form-group" style="background: #f1f5f9; padding: 15px; border-radius: 8px;">
+                <label>Segurança: Senha ou Padrão</label>
+                <input type="text" id="phonePass" placeholder="Senha Alfanumérica" style="margin-bottom: 10px;">
+                <p style="font-size: 0.8rem; text-align: center; color: #64748b;">Toque nas bolinhas se for Padrão:</p>
+                <div class="pattern-grid" id="patternGrid">
+                    <div class="dot" data-id="1">1</div>
+                    <div class="dot" data-id="2">2</div>
+                    <div class="dot" data-id="3">3</div>
+                    <div class="dot" data-id="4">4</div>
+                    <div class="dot" data-id="5">5</div>
+                    <div class="dot" data-id="6">6</div>
+                    <div class="dot" data-id="7">7</div>
+                    <div class="dot" data-id="8">8</div>
+                    <div class="dot" data-id="9">9</div>
                 </div>
-                <button type="button" class="btn" style="padding: 5px; font-size: 12px; margin-top:0;" onclick="clearPattern()">Limpar Padrão</button>
-                <input type="hidden" id="patternResult">
+                <button type="button" class="btn" style="padding: 5px; font-size: 0.7rem;" onclick="resetPattern()">Limpar Padrão</button>
             </div>
 
             <div class="form-group">
-                <label>Qual a Demanda?</label>
-                <select id="demandSelect" required>
-                    <option value="" disabled selected>Selecione...</option>
+                <label>Demanda do Serviço</label>
+                <select id="serviceDemand">
                     <option value="Tela Quebrada">Tela Quebrada</option>
                     <option value="Bateria Viciada">Bateria Viciada</option>
                     <option value="Conector de Carga">Conector de Carga</option>
@@ -285,191 +152,171 @@
             </div>
 
             <div class="form-group">
-                <label>Estado em que o celular chegou:</label>
-                <textarea id="deviceCondition" rows="2"></textarea>
+                <label>Estado do Aparelho e Descrição</label>
+                <input type="text" id="deviceStatus" placeholder="Ex: Riscos na carcaça, película quebrada" style="margin-bottom: 8px;">
+                <textarea id="problemDesc" placeholder="Descrição detalhada do defeito" rows="3"></textarea>
             </div>
 
             <div class="form-group">
-                <label>Descrição do Problema:</label>
-                <textarea id="problemDescription" rows="3"></textarea>
+                <label>Foto do Aparelho</label>
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('cameraInput').click()">📸 Acessar Câmera ou Galeria</button>
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(this)">
+                <img id="imagePreview" alt="Preview">
             </div>
 
-            <div class="form-group">
-                <label>Anexar Foto do Aparelho:</label>
-                <div class="file-upload">
-                    <input type="file" id="devicePhoto" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(event)">
-                    <button type="button" class="btn" onclick="document.getElementById('devicePhoto').click()">📸 Tirar Foto / Galeria</button>
+            <div class="row">
+                <div class="form-group">
+                    <label>Serviço / Valor</label>
+                    <input type="text" id="finalService" placeholder="O que será feito?" required style="margin-bottom: 8px;">
+                    <input type="number" id="servicePrice" placeholder="Valor R$" required>
                 </div>
-                <img id="imagePreview" src="" alt="Pré-visualização">
             </div>
 
-            <div class="form-group">
-                <label>Serviço que será realizado:</label>
-                <input type="text" id="serviceDone" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Valor do Serviço (R$):</label>
-                <input type="number" id="serviceValue" step="0.01" required>
-            </div>
-
-            <button type="submit" class="btn solid">Gerar OS em PDF</button>
+            <button type="submit" class="btn btn-primary">GERAR ORDEM DE SERVIÇO</button>
         </form>
     </div>
 
-    <div class="container" id="successScreen">
-        <h1>OS Gerada!</h1>
-        <p style="text-align: center; margin-bottom: 20px;">O PDF foi gerado e baixado. Agora envie o resumo para o cliente.</p>
-        
-        <button class="btn solid" onclick="location.reload()">Nova OS</button>
-        <button class="btn whatsapp" onclick="sendToWhatsApp()">📱 Enviar para WhatsApp do Cliente</button>
+    <div id="success-screen" class="container screen">
+        <header>
+            <h1 style="color: #16a34a;">OS Criada com Sucesso!</h1>
+            <p>Escolha o que deseja fazer agora:</p>
+        </header>
+
+        <button class="btn btn-primary" onclick="generatePDF()">📥 Baixar PDF da OS</button>
+        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar todas as informações via WhatsApp</button>
+        <button class="btn btn-outline" onclick="window.location.reload()">➕ Criar Nova OS</button>
     </div>
 
-    <div id="pdfContent">
-        <h1 id="pdfShopName">Assistência Técnica</h1>
-        <div class="pdf-row"><strong>Telefone:</strong> <span id="pdfShopPhone"></span></div>
-        <br>
-        <div class="pdf-row"><strong>Cliente:</strong> <span id="pdfClientName"></span></div>
-        <div class="pdf-row"><strong>WhatsApp:</strong> <span id="pdfClientWpp"></span></div>
-        <div class="pdf-row"><strong>Email:</strong> <span id="pdfClientEmail"></span></div>
-        <div class="pdf-row"><strong>Endereço:</strong> <span id="pdfClientAddress"></span></div>
-        <div class="pdf-row"><strong>Modalidade:</strong> <span id="pdfDelivery"></span></div>
-        <br>
-        <div class="pdf-row"><strong>Senha (Texto):</strong> <span id="pdfPhonePass"></span></div>
-        <div class="pdf-row"><strong>Senha (Padrão/Ordem):</strong> <span id="pdfPattern"></span></div>
-        <div class="pdf-row"><strong>Demanda:</strong> <span id="pdfDemand"></span></div>
-        <div class="pdf-row"><strong>Estado do Aparelho:</strong> <span id="pdfCondition"></span></div>
-        <div class="pdf-row"><strong>Descrição do Problema:</strong> <span id="pdfProblem"></span></div>
-        <br>
-        <div class="pdf-row"><strong>Serviço Realizado:</strong> <span id="pdfService"></span></div>
-        <div class="pdf-row"><strong>Valor Total:</strong> R$ <span id="pdfValue"></span></div>
-        
-        <div style="margin-top: 20px;">
-            <strong>Foto do Aparelho:</strong><br>
-            <img id="pdfImage" class="pdf-image" src="" style="display:none;">
+    <div id="pdf-template">
+        <div class="pdf-header">
+            <h1>ORDEM DE SERVIÇO - ASSISTÊNCIA TÉCNICA</h1>
+            <p>Fone: <span id="pdf-shopPhone"></span></p>
+        </div>
+        <div class="pdf-section">
+            <h3>DADOS DO CLIENTE</h3>
+            <p><strong>Nome:</strong> <span id="pdf-clientName"></span></p>
+            <p><strong>WhatsApp:</strong> <span id="pdf-clientWpp"></span></p>
+            <p><strong>Endereço:</strong> <span id="pdf-clientAddress"></span></p>
+            <p><strong>Tipo:</strong> <span id="pdf-delivery"></span></p>
+        </div>
+        <hr><br>
+        <div class="pdf-section">
+            <h3>INFORMAÇÕES DO APARELHO</h3>
+            <p><strong>Senha:</strong> <span id="pdf-pass"></span> | <strong>Padrão:</strong> <span id="pdf-pattern"></span></p>
+            <p><strong>Demanda:</strong> <span id="pdf-demand"></span></p>
+            <p><strong>Estado:</strong> <span id="pdf-status"></span></p>
+            <p><strong>Defeito:</strong> <span id="pdf-desc"></span></p>
+        </div>
+        <hr><br>
+        <div class="pdf-section" style="background: #f8f9fa; padding: 10px;">
+            <h3>SERVIÇO A REALIZAR</h3>
+            <p><strong>Descrição:</strong> <span id="pdf-service"></span></p>
+            <p><strong>VALOR TOTAL:</strong> R$ <span id="pdf-price"></span></p>
+        </div>
+        <div class="pdf-section">
+            <p><strong>Anexo Fotográfico:</strong></p>
+            <img id="pdf-image" style="max-width: 300px; margin-top: 10px;">
         </div>
     </div>
 
     <script>
-        // LÓGICA DO PADRÃO DE DESBLOQUEIO (BOLINHAS)
-        let patternSequence = [];
-        const dots = document.querySelectorAll('.pattern-dot');
-        const patternInput = document.getElementById('patternResult');
+        let pattern = [];
+        let base64Image = "";
 
-        dots.forEach(dot => {
+        // Lógica das bolinhas
+        document.querySelectorAll('.dot').forEach(dot => {
             dot.addEventListener('click', function() {
-                const val = this.getAttribute('data-val');
-                if(!this.classList.contains('active')) {
+                const id = this.dataset.id;
+                if (!pattern.includes(id)) {
+                    pattern.push(id);
                     this.classList.add('active');
-                    this.innerText = patternSequence.length + 1; // Mostra a ordem clicada
-                    this.style.color = "var(--bg-color)";
-                    patternSequence.push(val);
-                    patternInput.value = patternSequence.join(' -> ');
                 }
             });
         });
 
-        function clearPattern() {
-            patternSequence = [];
-            patternInput.value = '';
-            dots.forEach(dot => {
-                dot.classList.remove('active');
-                dot.style.color = "transparent";
-                dot.innerText = dot.getAttribute('data-val');
-            });
+        function resetPattern() {
+            pattern = [];
+            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
         }
 
-        // LÓGICA DA IMAGEM (PRÉ-VISUALIZAÇÃO E PDF)
-        let imageDataUrl = "";
-        function previewImage(event) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const preview = document.getElementById('imagePreview');
-                const pdfImage = document.getElementById('pdfImage');
-                preview.src = reader.result;
-                preview.style.display = 'block';
-                pdfImage.src = reader.result;
-                pdfImage.style.display = 'block';
-                imageDataUrl = reader.result;
-            }
-            if(event.target.files[0]) {
-                reader.readAsDataURL(event.target.files[0]);
+        // Processar Imagem
+        function handleImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    base64Image = e.target.result;
+                    document.getElementById('imagePreview').src = base64Image;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.getElementById('pdf-image').src = base64Image;
+                };
+                reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // LÓGICA DE GERAÇÃO DO PDF E TRANSIÇÃO DE TELA
+        // Submissão do Form
         document.getElementById('osForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Preencher template PDF
+            document.getElementById('pdf-shopPhone').innerText = document.getElementById('shopPhone').value;
+            document.getElementById('pdf-clientName').innerText = document.getElementById('clientName').value;
+            document.getElementById('pdf-clientWpp').innerText = document.getElementById('clientWpp').value;
+            document.getElementById('pdf-clientAddress').innerText = document.getElementById('clientAddress').value;
+            document.getElementById('pdf-delivery').innerText = document.getElementById('deliveryType').value;
+            document.getElementById('pdf-pass').innerText = document.getElementById('phonePass').value || "Não informado";
+            document.getElementById('pdf-pattern').innerText = pattern.join('→') || "Não informado";
+            document.getElementById('pdf-demand').innerText = document.getElementById('serviceDemand').value;
+            document.getElementById('pdf-status').innerText = document.getElementById('deviceStatus').value;
+            document.getElementById('pdf-desc').innerText = document.getElementById('problemDesc').value;
+            document.getElementById('pdf-service').innerText = document.getElementById('finalService').value;
+            document.getElementById('pdf-price').innerText = document.getElementById('servicePrice').value;
 
-            // Preenche o HTML oculto do PDF com os dados do form
-            const sName = document.getElementById('shopName').value || "Assistência Técnica";
-            document.getElementById('pdfShopName').innerText = sName;
-            document.getElementById('pdfShopPhone').innerText = document.getElementById('shopPhone').value;
-            
-            document.getElementById('pdfClientName').innerText = document.getElementById('clientName').value;
-            document.getElementById('pdfClientWpp').innerText = document.getElementById('clientWpp').value;
-            document.getElementById('pdfClientEmail').innerText = document.getElementById('clientEmail').value;
-            document.getElementById('pdfDelivery').innerText = document.querySelector('input[name="delivery"]:checked').value;
-            document.getElementById('pdfClientAddress').innerText = document.getElementById('clientAddress').value;
-            
-            document.getElementById('pdfPhonePass').innerText = document.getElementById('phonePassword').value || "N/A";
-            document.getElementById('pdfPattern').innerText = patternInput.value || "N/A";
-            document.getElementById('pdfDemand').innerText = document.getElementById('demandSelect').value;
-            document.getElementById('pdfCondition').innerText = document.getElementById('deviceCondition').value;
-            document.getElementById('pdfProblem').innerText = document.getElementById('problemDescription').value;
-            
-            document.getElementById('pdfService').innerText = document.getElementById('serviceDone').value;
-            document.getElementById('pdfValue').innerText = document.getElementById('serviceValue').value;
-
-            // Gera o PDF
-            const element = document.getElementById('pdfContent');
-            element.style.display = 'block'; // Mostra temporariamente para renderizar
-            
-            const opt = {
-                margin:       10,
-                filename:     'OS_' + document.getElementById('clientName').value.replace(/\s+/g, '_') + '.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                element.style.display = 'none'; // Esconde o HTML do PDF novamente
-                
-                // Troca as telas
-                document.getElementById('formScreen').style.display = 'none';
-                document.getElementById('successScreen').style.display = 'block';
-            });
+            // Trocar tela
+            document.getElementById('form-screen').classList.remove('active-screen');
+            document.getElementById('success-screen').classList.add('active-screen');
+            window.scrollTo(0,0);
         });
 
-        // LÓGICA PARA ENVIAR MENSAGEM PARA O WHATSAPP DO CLIENTE
-        function sendToWhatsApp() {
-            // Formata o número do cliente (remove espaços e traços)
-            let rawNumber = document.getElementById('clientWpp').value;
-            let phoneNumber = rawNumber.replace(/\D/g, ''); 
+        // Função Gerar PDF
+        function generatePDF() {
+            const element = document.getElementById('pdf-template');
+            const opt = {
+                margin: 10,
+                filename: `OS_${document.getElementById('clientName').value}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, logging: false, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
             
-            // Cria a mensagem baseada nos dados inseridos
-            let shop = document.getElementById('shopName').value || "Assistência Técnica";
-            let name = document.getElementById('clientName').value;
-            let demand = document.getElementById('demandSelect').value;
-            let service = document.getElementById('serviceDone').value;
-            let value = document.getElementById('serviceValue').value;
-            let delivery = document.querySelector('input[name="delivery"]:checked').value;
-
-            let textMessage = `*Olá ${name}, aqui é da ${shop}!* 🛠️\n\n`;
-            textMessage += `Sua Ordem de Serviço foi gerada com sucesso. Abaixo está o resumo:\n\n`;
-            textMessage += `📱 *Aparelho/Demanda:* ${demand}\n`;
-            textMessage += `🔧 *Serviço a ser realizado:* ${service}\n`;
-            textMessage += `💰 *Valor Final:* R$ ${value}\n`;
-            textMessage += `📦 *Modalidade:* ${delivery}\n\n`;
-            textMessage += `Qualquer dúvida, estamos à disposição!`;
-
-            // Codifica a mensagem para a URL
-            let encodedText = encodeURIComponent(textMessage);
+            // Forçar visibilidade temporária para o renderizador
+            element.style.position = "static";
+            element.style.left = "0";
             
-            // Redireciona para o WhatsApp do Cliente (Garante que a notificação vai para o cliente, não para a loja)
-            let url = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
-            window.open(url, '_blank');
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.position = "absolute";
+                element.style.left = "-9999px";
+            });
+        }
+
+        // Função Enviar WhatsApp
+        function sendWhatsApp() {
+            const name = document.getElementById('clientName').value;
+            const wpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
+            const demand = document.getElementById('serviceDemand').value;
+            const service = document.getElementById('finalService').value;
+            const price = document.getElementById('servicePrice').value;
+            const type = document.getElementById('deliveryType').value;
+            const shop = document.getElementById('shopPhone').value;
+
+            const msg = `*RESUMO DA ORDEM DE SERVIÇO*%0A%0A` +
+                        `*Cliente:* ${name}%0A` +
+                        `*Aparelho/Demanda:* ${demand}%0A` +
+                        `*Serviço:* ${service}%0A` +
+                        `*Valor:* R$ ${price}%0A` +
+                        `*Status:* ${type}%0A%0A` +
+                        `_Sua ordem de serviço foi registrada com sucesso! Para dúvidas ligue: ${shop}_`;
+
+            window.open(`https://api.whatsapp.com/send?phone=55${wpp}&text=${msg}`, '_blank');
         }
     </script>
 </body>
