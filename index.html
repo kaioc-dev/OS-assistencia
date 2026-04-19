@@ -14,7 +14,7 @@
             --border: #e2e8f0;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 15px; }
 
         .container {
@@ -54,6 +54,18 @@
         }
         .dot.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+        /* Canvas de Desenho */
+        .canvas-container {
+            width: 100%;
+            border: 2px dashed var(--border);
+            border-radius: 6px;
+            background: #fff;
+            margin-bottom: 10px;
+            overflow: hidden;
+            touch-action: none; /* Impede a tela de rolar enquanto desenha */
+        }
+        canvas { width: 100%; display: block; }
+
         .btn {
             width: 100%; padding: 15px; border: none; border-radius: 6px;
             font-size: 1rem; font-weight: bold; cursor: pointer;
@@ -62,16 +74,21 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: #16a34a; color: white; }
         .btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-small { padding: 8px; font-size: 0.85rem; margin-top: 5px; }
 
-        #imagePreview { max-width: 100%; border-radius: 6px; margin-top: 10px; display: none; }
-
-        /* Estilo do PDF Oculto */
+        /* Estilo do PDF Oculto - BEM DETALHADO */
         #pdf-template {
             position: absolute; left: -9999px; top: -9999px;
-            width: 180mm; padding: 20px; color: #000; background: #fff;
+            width: 190mm; padding: 25px; color: #000; background: #fff;
+            font-size: 14px; line-height: 1.5;
         }
-        .pdf-header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
-        .pdf-section { margin-bottom: 15px; }
+        .pdf-header { text-align: center; border-bottom: 3px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+        .pdf-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .pdf-section { margin-bottom: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 4px; }
+        .pdf-section h3 { background: #f1f5f9; margin: -15px -15px 15px -15px; padding: 8px 15px; font-size: 16px; border-bottom: 1px solid #ddd; }
+        .pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .pdf-full { grid-column: span 2; }
+        .pdf-item strong { color: #333; }
 
         /* Telas */
         .screen { display: none; }
@@ -87,11 +104,9 @@
         </header>
 
         <form id="osForm">
-            <div class="row">
-                <div class="form-group">
-                    <label>Telefone da Assistência</label>
-                    <input type="tel" id="shopPhone" placeholder="(00) 00000-0000" required>
-                </div>
+            <div class="form-group">
+                <label>Telefone da Assistência</label>
+                <input type="tel" id="shopPhone" placeholder="(00) 00000-0000" required>
             </div>
 
             <div class="form-group">
@@ -121,8 +136,8 @@
 
             <div class="form-group" style="background: #f1f5f9; padding: 15px; border-radius: 8px;">
                 <label>Segurança: Senha ou Padrão</label>
-                <input type="text" id="phonePass" placeholder="Senha Alfanumérica" style="margin-bottom: 10px;">
-                <p style="font-size: 0.8rem; text-align: center; color: #64748b;">Toque nas bolinhas se for Padrão:</p>
+                <input type="text" id="phonePass" placeholder="Senha de Letras/Números" style="margin-bottom: 10px;">
+                <p style="font-size: 0.8rem; text-align: center; color: #64748b;">Ou toque nas bolinhas para gravar o Padrão:</p>
                 <div class="pattern-grid" id="patternGrid">
                     <div class="dot" data-id="1">1</div>
                     <div class="dot" data-id="2">2</div>
@@ -134,7 +149,7 @@
                     <div class="dot" data-id="8">8</div>
                     <div class="dot" data-id="9">9</div>
                 </div>
-                <button type="button" class="btn" style="padding: 5px; font-size: 0.7rem;" onclick="resetPattern()">Limpar Padrão</button>
+                <button type="button" class="btn btn-outline btn-small" onclick="resetPattern()">Limpar Padrão</button>
             </div>
 
             <div class="form-group">
@@ -151,22 +166,25 @@
             </div>
 
             <div class="form-group">
-                <label>Estado do Aparelho e Descrição</label>
-                <input type="text" id="deviceStatus" placeholder="Ex: Riscos na carcaça, película quebrada" style="margin-bottom: 8px;">
-                <textarea id="problemDesc" placeholder="Descrição detalhada do defeito" rows="3"></textarea>
+                <label>Estado em que chegou e Descrição do Defeito</label>
+                <input type="text" id="deviceStatus" placeholder="Ex: Película trincada, arranhões..." style="margin-bottom: 8px;">
+                <textarea id="problemDesc" placeholder="Descreva o problema com detalhes..." rows="3"></textarea>
             </div>
 
-            <div class="form-group">
-                <label>Foto do Aparelho</label>
-                <button type="button" class="btn btn-outline" onclick="document.getElementById('cameraInput').click()">📸 Acessar Câmera ou Galeria</button>
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(this)">
-                <img id="imagePreview" alt="Preview">
+            <div class="form-group" style="background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
+                <label>Mapeamento de Avarias (Risque com o dedo)</label>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">Aponte trincos, arranhões ou amassados nas partes do aparelho.</p>
+                
+                <div class="canvas-container">
+                    <canvas id="phoneCanvas" width="400" height="250"></canvas>
+                </div>
+                <button type="button" class="btn btn-outline btn-small" onclick="initCanvas()">🗑️ Limpar Desenho</button>
             </div>
 
             <div class="row">
                 <div class="form-group" style="flex: 2;">
-                    <label>Serviço Realizado</label>
-                    <input type="text" id="finalService" placeholder="O que será feito?" required>
+                    <label>Serviço que será realizado</label>
+                    <input type="text" id="finalService" placeholder="O que vai ser feito?" required>
                 </div>
                 <div class="form-group" style="flex: 1;">
                     <label>Valor (R$)</label>
@@ -184,7 +202,7 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-primary">GERAR ORDEM DE SERVIÇO</button>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">GERAR ORDEM DE SERVIÇO</button>
         </form>
     </div>
 
@@ -194,57 +212,70 @@
             <p>Escolha o que deseja fazer agora:</p>
         </header>
 
-        <button class="btn btn-primary" onclick="generatePDF()">📥 Baixar PDF da OS</button>
-        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar informações via WhatsApp</button>
+        <button class="btn btn-primary" onclick="generatePDF()">📥 Baixar PDF Detalhado</button>
+        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar via WhatsApp p/ Cliente</button>
         <button class="btn btn-outline" onclick="window.location.reload()">➕ Criar Nova OS</button>
     </div>
 
     <div id="pdf-template">
         <div class="pdf-header">
-            <h1>ORDEM DE SERVIÇO - ASSISTÊNCIA TÉCNICA</h1>
-            <p>Fone: <span id="pdf-shopPhone"></span></p>
+            <div class="pdf-title">ORDEM DE SERVIÇO</div>
+            <p><strong>Assistência Técnica</strong> | Contato: <span id="pdf-shopPhone"></span></p>
         </div>
+
         <div class="pdf-section">
             <h3>DADOS DO CLIENTE</h3>
-            <p><strong>Nome:</strong> <span id="pdf-clientName"></span></p>
-            <p><strong>WhatsApp:</strong> <span id="pdf-clientWpp"></span></p>
-            <p><strong>Endereço:</strong> <span id="pdf-clientAddress"></span></p>
-            <p><strong>Tipo:</strong> <span id="pdf-delivery"></span></p>
+            <div class="pdf-grid">
+                <div class="pdf-item"><strong>Nome:</strong> <span id="pdf-clientName"></span></div>
+                <div class="pdf-item"><strong>WhatsApp:</strong> <span id="pdf-clientWpp"></span></div>
+                <div class="pdf-item pdf-full"><strong>Email:</strong> <span id="pdf-clientEmail"></span></div>
+                <div class="pdf-item pdf-full"><strong>Endereço:</strong> <span id="pdf-clientAddress"></span></div>
+                <div class="pdf-item"><strong>Modalidade:</strong> <span id="pdf-delivery"></span></div>
+            </div>
         </div>
-        <hr><br>
+
         <div class="pdf-section">
-            <h3>INFORMAÇÕES DO APARELHO</h3>
-            <p><strong>Senha:</strong> <span id="pdf-pass"></span> | <strong>Padrão:</strong> <span id="pdf-pattern"></span></p>
-            <p><strong>Demanda:</strong> <span id="pdf-demand"></span></p>
-            <p><strong>Estado:</strong> <span id="pdf-status"></span></p>
-            <p><strong>Defeito:</strong> <span id="pdf-desc"></span></p>
+            <h3>INFORMAÇÕES DO DISPOSITIVO</h3>
+            <div class="pdf-grid">
+                <div class="pdf-item"><strong>Senha Alfanumérica:</strong> <span id="pdf-pass"></span></div>
+                <div class="pdf-item"><strong>Padrão de Desbloqueio:</strong> <span id="pdf-pattern"></span></div>
+                <div class="pdf-item"><strong>Demanda Inicial:</strong> <span id="pdf-demand"></span></div>
+                <div class="pdf-item"><strong>Estado ao Receber:</strong> <span id="pdf-status"></span></div>
+                <div class="pdf-item pdf-full"><strong>Descrição do Problema:</strong> <span id="pdf-desc"></span></div>
+            </div>
         </div>
-        <hr><br>
-        <div class="pdf-section" style="background: #f8f9fa; padding: 10px;">
-            <h3>SERVIÇO A REALIZAR</h3>
-            <p><strong>Descrição:</strong> <span id="pdf-service"></span></p>
-            <p><strong>VALOR TOTAL:</strong> R$ <span id="pdf-price"></span></p>
-            <p><strong>PAGAMENTO:</strong> <span id="pdf-payment"></span></p>
+
+        <div class="pdf-section">
+            <h3>MAPEAMENTO DE AVARIAS</h3>
+            <div style="text-align: center; margin-top: 10px;">
+                <img id="pdf-canvas-image" style="max-width: 80%; border: 1px solid #ccc; border-radius: 8px;">
+            </div>
+        </div>
+
+        <div class="pdf-section" style="background-color: #f8fafc;">
+            <h3>ORÇAMENTO E SERVIÇO</h3>
+            <div class="pdf-grid">
+                <div class="pdf-item pdf-full"><strong>Serviço a ser realizado:</strong> <span id="pdf-service"></span></div>
+                <div class="pdf-item" style="font-size: 18px;"><strong>VALOR TOTAL:</strong> R$ <span id="pdf-price"></span></div>
+                <div class="pdf-item" style="font-size: 18px;"><strong>PAGAMENTO:</strong> <span id="pdf-payment"></span></div>
+            </div>
         </div>
         
-        <div class="pdf-section" id="pdf-image-container" style="display: none; text-align: center;">
-            <p style="text-align: left;"><strong>Anexo Fotográfico:</strong></p>
-            <img id="pdf-image" style="max-width: 100%; max-height: 400px; margin-top: 10px; border-radius: 4px; object-fit: contain;">
-        </div>
+        <p style="text-align: center; font-size: 12px; color: #666; margin-top: 30px;">
+            Assinatura do Cliente: _____________________________________________________
+        </p>
     </div>
 
     <script>
+        // === 1. LÓGICA DO PADRÃO DE DESBLOQUEIO (BOLINHAS) ===
         let pattern = [];
-        let base64Image = "";
-
-        // Lógica das bolinhas - Captura e salva em Array
         document.querySelectorAll('.dot').forEach(dot => {
             dot.addEventListener('click', function() {
                 const id = this.dataset.id;
                 if (!pattern.includes(id)) {
                     pattern.push(id);
                     this.classList.add('active');
-                    this.innerText = pattern.length; // Mostra o número da sequência na tela
+                    this.innerText = pattern.length; 
                 }
             });
         });
@@ -253,104 +284,148 @@
             pattern = [];
             document.querySelectorAll('.dot').forEach(d => {
                 d.classList.remove('active');
-                d.innerText = d.dataset.id; // Restaura o número original
+                d.innerText = d.dataset.id; 
             });
         }
 
-        // Compressor de Imagem (Corrige o Bug da foto sumindo no PDF)
-        function handleImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        // Cria um canvas para redimensionar a imagem
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; // Tamanho ideal para PDF e performance
-                        let width = img.width;
-                        let height = img.height;
-                        
-                        if (width > MAX_WIDTH) {
-                            height = Math.round((height * MAX_WIDTH) / width);
-                            width = MAX_WIDTH;
-                        }
-                        
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Converte a imagem comprimida em Base64
-                        base64Image = canvas.toDataURL('image/jpeg', 0.7);
-                        
-                        // Exibe a imagem na tela e prepara no PDF
-                        document.getElementById('imagePreview').src = base64Image;
-                        document.getElementById('imagePreview').style.display = 'block';
-                        document.getElementById('pdf-image').src = base64Image;
-                        document.getElementById('pdf-image-container').style.display = 'block';
-                    }
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
+
+        // === 2. LÓGICA DO CANVAS DE DESENHO (FRENTE E COSTAS) ===
+        const canvas = document.getElementById('phoneCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function initCanvas() {
+            // Limpa fundo para branco
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Estilo do traço do celular
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 3;
+
+            // --- DESENHAR FRENTE DO CELULAR ---
+            ctx.strokeRect(60, 20, 100, 200); // Corpo
+            ctx.strokeRect(65, 25, 90, 190);  // Tela interna
+            ctx.beginPath(); ctx.arc(110, 35, 3, 0, Math.PI*2); ctx.stroke(); // Câmera frontal
+            ctx.beginPath(); ctx.arc(110, 205, 5, 0, Math.PI*2); ctx.stroke(); // Botão Home (visual clássico)
+            
+            ctx.fillStyle = "#475569";
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("FRENTE", 85, 240);
+
+            // --- DESENHAR COSTAS DO CELULAR ---
+            ctx.strokeRect(240, 20, 100, 200); // Corpo
+            ctx.strokeRect(250, 30, 30, 30);  // Módulo da Câmera
+            ctx.beginPath(); ctx.arc(265, 45, 6, 0, Math.PI*2); ctx.stroke(); // Lente
+            
+            ctx.fillText("COSTAS", 260, 240);
         }
 
-        // Submissão do Form
+        // Eventos para desenhar (Touch e Mouse)
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Lida tanto com toque na tela quanto com mouse
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function startPosition(e) {
+            e.preventDefault(); // Evita que a tela suba ou desça no celular
+            isDrawing = true;
+            const pos = getMousePos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = "#ef4444"; // Cor vermelha para os riscos
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function endPosition() {
+            isDrawing = false;
+        }
+
+        // Atribuir eventos ao Canvas
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', endPosition);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseout', endPosition);
+
+        canvas.addEventListener('touchstart', startPosition, { passive: false });
+        canvas.addEventListener('touchend', endPosition);
+        canvas.addEventListener('touchmove', draw, { passive: false });
+
+        // Inicializa os desenhos ao carregar
+        initCanvas();
+
+
+        // === 3. SUBMISSÃO DO FORMULÁRIO E PREPARO DO PDF ===
         document.getElementById('osForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Preencher template PDF
+            // Popula as informações de texto
             document.getElementById('pdf-shopPhone').innerText = document.getElementById('shopPhone').value;
             document.getElementById('pdf-clientName').innerText = document.getElementById('clientName').value;
             document.getElementById('pdf-clientWpp').innerText = document.getElementById('clientWpp').value;
+            document.getElementById('pdf-clientEmail').innerText = document.getElementById('clientEmail').value || "Não informado";
             document.getElementById('pdf-clientAddress').innerText = document.getElementById('clientAddress').value || "Não informado";
             document.getElementById('pdf-delivery').innerText = document.getElementById('deliveryType').value;
-            document.getElementById('pdf-pass').innerText = document.getElementById('phonePass').value || "Não informado";
-            
-            // Corrige o padrão (Junta os números clicados com setas)
-            document.getElementById('pdf-pattern').innerText = pattern.length > 0 ? pattern.join(' ➔ ') : "Não informado";
-            
+            document.getElementById('pdf-pass').innerText = document.getElementById('phonePass').value || "Sem Senha";
+            document.getElementById('pdf-pattern').innerText = pattern.length > 0 ? pattern.join(' ➔ ') : "Sem Padrão";
             document.getElementById('pdf-demand').innerText = document.getElementById('serviceDemand').value;
             document.getElementById('pdf-status').innerText = document.getElementById('deviceStatus').value || "Não detalhado";
-            document.getElementById('pdf-desc').innerText = document.getElementById('problemDesc').value || "Não detalhado";
+            document.getElementById('pdf-desc').innerText = document.getElementById('problemDesc').value || "Sem detalhes adicionais";
             document.getElementById('pdf-service').innerText = document.getElementById('finalService').value;
             document.getElementById('pdf-price').innerText = document.getElementById('servicePrice').value;
-            
-            // Atribui o método de pagamento
             document.getElementById('pdf-payment').innerText = document.getElementById('paymentMethod').value;
 
-            // Trocar tela
+            // Salva o desenho do Canvas como uma Imagem e joga no PDF
+            const dataUrl = canvas.toDataURL('image/png');
+            document.getElementById('pdf-canvas-image').src = dataUrl;
+
+            // Transição de tela
             document.getElementById('form-screen').classList.remove('active-screen');
             document.getElementById('success-screen').classList.add('active-screen');
             window.scrollTo(0,0);
         });
 
-        // Função Gerar PDF
+
+        // === 4. GERAR PDF FINAL ===
         function generatePDF() {
             const element = document.getElementById('pdf-template');
             const clientName = document.getElementById('clientName').value || "Cliente";
             
             const opt = {
-                margin: 10,
-                filename: `OS_${clientName}.pdf`,
+                margin: 5,
+                filename: `OS_${clientName.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, logging: false, useCORS: true },
+                html2canvas: { scale: 2, logging: false },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            // Exibe o PDF por baixo dos panos só para fotografar e depois esconde
             element.style.position = "static";
             element.style.left = "0";
             
-            setTimeout(() => {
-                html2pdf().set(opt).from(element).save().then(() => {
-                    element.style.position = "absolute";
-                    element.style.left = "-9999px";
-                });
-            }, 300);
+            // Renderiza o PDF com os dados
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.position = "absolute";
+                element.style.left = "-9999px";
+            });
         }
 
-        // Função Enviar WhatsApp
+
+        // === 5. ENVIAR PARA O WHATSAPP DO CLIENTE ===
         function sendWhatsApp() {
             const name = document.getElementById('clientName').value;
             const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
@@ -363,14 +438,14 @@
             const shop = document.getElementById('shopPhone').value;
             const payment = document.getElementById('paymentMethod').value;
 
-            const msg = `*RESUMO DA ORDEM DE SERVIÇO*%0A%0A` +
-                        `*Cliente:* ${name}%0A` +
-                        `*Aparelho/Demanda:* ${demand}%0A` +
-                        `*Serviço:* ${service}%0A` +
-                        `*Valor:* R$ ${price}%0A` +
-                        `*Forma de Pagto:* ${payment}%0A` +
-                        `*Status:* ${type}%0A%0A` +
-                        `_Sua ordem de serviço foi registrada com sucesso! Para dúvidas ligue: ${shop}_`;
+            const msg = `*ORDEM DE SERVIÇO - RESUMO*%0A%0A` +
+                        `👤 *Cliente:* ${name}%0A` +
+                        `📱 *Aparelho/Demanda:* ${demand}%0A` +
+                        `🔧 *Serviço a Realizar:* ${service}%0A` +
+                        `💰 *Valor Total:* R$ ${price}%0A` +
+                        `💳 *Formato de Pagamento:* ${payment}%0A` +
+                        `📦 *Modalidade:* ${type}%0A%0A` +
+                        `_Sua Ordem de Serviço foi gerada com sucesso. Qualquer dúvida, retorne neste contato: ${shop}_`;
 
             window.open(`https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`, '_blank');
         }
