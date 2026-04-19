@@ -56,27 +56,20 @@
 
         /* Canvas de Desenho */
         .canvas-container {
-            width: 100%;
-            border: 2px dashed var(--border);
-            border-radius: 6px;
-            background: #fff;
-            margin-bottom: 10px;
-            overflow: hidden;
-            touch-action: none; /* Impede a tela de rolar enquanto desenha */
+            width: 100%; border: 2px dashed var(--border); border-radius: 6px;
+            background: #fff; margin-bottom: 10px; overflow: hidden; touch-action: none;
         }
         canvas { width: 100%; display: block; }
 
         .btn {
             width: 100%; padding: 15px; border: none; border-radius: 6px;
-            font-size: 1rem; font-weight: bold; cursor: pointer;
-            transition: 0.3s; margin-top: 10px;
+            font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
         }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: #16a34a; color: white; }
         .btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
         .btn-small { padding: 8px; font-size: 0.85rem; margin-top: 5px; }
 
-        /* Estilo do PDF Oculto - BEM DETALHADO */
+        /* Estilo do PDF Oculto */
         #pdf-template {
             position: absolute; left: -9999px; top: -9999px;
             width: 190mm; padding: 25px; color: #000; background: #fff;
@@ -93,6 +86,14 @@
         /* Telas */
         .screen { display: none; }
         .active-screen { display: block; }
+
+        /* Spinner de Carregamento */
+        .loader {
+            border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -174,7 +175,6 @@
             <div class="form-group" style="background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
                 <label>Mapeamento de Avarias (Risque com o dedo)</label>
                 <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">Aponte trincos, arranhões ou amassados nas partes do aparelho.</p>
-                
                 <div class="canvas-container">
                     <canvas id="phoneCanvas" width="400" height="250"></canvas>
                 </div>
@@ -202,19 +202,26 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">GERAR ORDEM DE SERVIÇO</button>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">GERAR E ENVIAR OS</button>
         </form>
     </div>
 
-    <div id="success-screen" class="container screen">
-        <header>
-            <h1 style="color: #16a34a;">OS Criada com Sucesso!</h1>
-            <p>Escolha o que deseja fazer agora:</p>
-        </header>
+    <div id="loading-screen" class="container screen" style="text-align: center; padding: 40px 20px;">
+        <h2 style="color: var(--primary);">Processando Arquivo...</h2>
+        <div class="loader"></div>
+        <p style="color: #64748b; margin-top: 15px;">Gerando PDF e preparando o envio para o cliente.</p>
+    </div>
 
-        <button class="btn btn-primary" onclick="generatePDF()">📥 Baixar PDF Detalhado</button>
-        <button class="btn btn-success" onclick="sendWhatsApp()">📱 Enviar via WhatsApp p/ Cliente</button>
-        <button class="btn btn-outline" onclick="window.location.reload()">➕ Criar Nova OS</button>
+    <div id="success-screen" class="container screen" style="text-align: center;">
+        <header>
+            <h1 style="color: #16a34a;">Processo Concluído!</h1>
+            <p>1. O PDF foi salvo no seu celular.</p>
+            <p>2. Você foi redirecionado para o WhatsApp do cliente.</p>
+        </header>
+        <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>Lembrete:</strong> Ao abrir o WhatsApp, não se esqueça de clicar no clipe 📎 e anexar o PDF que foi baixado!
+        </div>
+        <button class="btn btn-primary" onclick="window.location.reload()">➕ Criar Nova OS</button>
     </div>
 
     <div id="pdf-template">
@@ -267,7 +274,7 @@
     </div>
 
     <script>
-        // === 1. LÓGICA DO PADRÃO DE DESBLOQUEIO (BOLINHAS) ===
+        // Lógica do Padrão
         let pattern = [];
         document.querySelectorAll('.dot').forEach(dot => {
             dot.addEventListener('click', function() {
@@ -288,43 +295,32 @@
             });
         }
 
-
-        // === 2. LÓGICA DO CANVAS DE DESENHO (FRENTE E COSTAS) ===
+        // Lógica do Canvas
         const canvas = document.getElementById('phoneCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
 
         function initCanvas() {
-            // Limpa fundo para branco
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 3;
 
-            // Estilo do traço do celular
-            ctx.strokeStyle = "#94a3b8";
-            ctx.lineWidth = 3;
+            // Frente
+            ctx.strokeRect(60, 20, 100, 200); 
+            ctx.strokeRect(65, 25, 90, 190);  
+            ctx.beginPath(); ctx.arc(110, 35, 3, 0, Math.PI*2); ctx.stroke(); 
+            ctx.beginPath(); ctx.arc(110, 205, 5, 0, Math.PI*2); ctx.stroke(); 
+            ctx.fillStyle = "#475569"; ctx.font = "bold 14px Arial"; ctx.fillText("FRENTE", 85, 240);
 
-            // --- DESENHAR FRENTE DO CELULAR ---
-            ctx.strokeRect(60, 20, 100, 200); // Corpo
-            ctx.strokeRect(65, 25, 90, 190);  // Tela interna
-            ctx.beginPath(); ctx.arc(110, 35, 3, 0, Math.PI*2); ctx.stroke(); // Câmera frontal
-            ctx.beginPath(); ctx.arc(110, 205, 5, 0, Math.PI*2); ctx.stroke(); // Botão Home (visual clássico)
-            
-            ctx.fillStyle = "#475569";
-            ctx.font = "bold 14px Arial";
-            ctx.fillText("FRENTE", 85, 240);
-
-            // --- DESENHAR COSTAS DO CELULAR ---
-            ctx.strokeRect(240, 20, 100, 200); // Corpo
-            ctx.strokeRect(250, 30, 30, 30);  // Módulo da Câmera
-            ctx.beginPath(); ctx.arc(265, 45, 6, 0, Math.PI*2); ctx.stroke(); // Lente
-            
+            // Costas
+            ctx.strokeRect(240, 20, 100, 200); 
+            ctx.strokeRect(250, 30, 30, 30);  
+            ctx.beginPath(); ctx.arc(265, 45, 6, 0, Math.PI*2); ctx.stroke(); 
             ctx.fillText("COSTAS", 260, 240);
         }
 
-        // Eventos para desenhar (Touch e Mouse)
         function getMousePos(e) {
             const rect = canvas.getBoundingClientRect();
-            // Lida tanto com toque na tela quanto com mouse
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             return {
@@ -333,50 +329,22 @@
             };
         }
 
-        function startPosition(e) {
-            e.preventDefault(); // Evita que a tela suba ou desça no celular
-            isDrawing = true;
-            const pos = getMousePos(e);
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        }
+        function startPosition(e) { e.preventDefault(); isDrawing = true; const pos = getMousePos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+        function draw(e) { if (!isDrawing) return; e.preventDefault(); const pos = getMousePos(e); ctx.lineTo(pos.x, pos.y); ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.stroke(); }
+        function endPosition() { isDrawing = false; }
 
-        function draw(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
-            const pos = getMousePos(e);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.strokeStyle = "#ef4444"; // Cor vermelha para os riscos
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
-            ctx.stroke();
-        }
-
-        function endPosition() {
-            isDrawing = false;
-        }
-
-        // Atribuir eventos ao Canvas
-        canvas.addEventListener('mousedown', startPosition);
-        canvas.addEventListener('mouseup', endPosition);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseout', endPosition);
-
-        canvas.addEventListener('touchstart', startPosition, { passive: false });
-        canvas.addEventListener('touchend', endPosition);
-        canvas.addEventListener('touchmove', draw, { passive: false });
-
-        // Inicializa os desenhos ao carregar
+        canvas.addEventListener('mousedown', startPosition); canvas.addEventListener('mouseup', endPosition); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseout', endPosition);
+        canvas.addEventListener('touchstart', startPosition, { passive: false }); canvas.addEventListener('touchend', endPosition); canvas.addEventListener('touchmove', draw, { passive: false });
         initCanvas();
 
-
-        // === 3. SUBMISSÃO DO FORMULÁRIO E PREPARO DO PDF ===
+        // Fluxo Automático Completo
         document.getElementById('osForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Popula as informações de texto
+            // Popula os dados
             document.getElementById('pdf-shopPhone').innerText = document.getElementById('shopPhone').value;
-            document.getElementById('pdf-clientName').innerText = document.getElementById('clientName').value;
+            const clientName = document.getElementById('clientName').value;
+            document.getElementById('pdf-clientName').innerText = clientName;
             document.getElementById('pdf-clientWpp').innerText = document.getElementById('clientWpp').value;
             document.getElementById('pdf-clientEmail').innerText = document.getElementById('clientEmail').value || "Não informado";
             document.getElementById('pdf-clientAddress').innerText = document.getElementById('clientAddress').value || "Não informado";
@@ -389,23 +357,19 @@
             document.getElementById('pdf-service').innerText = document.getElementById('finalService').value;
             document.getElementById('pdf-price').innerText = document.getElementById('servicePrice').value;
             document.getElementById('pdf-payment').innerText = document.getElementById('paymentMethod').value;
+            document.getElementById('pdf-canvas-image').src = canvas.toDataURL('image/png');
 
-            // Salva o desenho do Canvas como uma Imagem e joga no PDF
-            const dataUrl = canvas.toDataURL('image/png');
-            document.getElementById('pdf-canvas-image').src = dataUrl;
-
-            // Transição de tela
+            // Troca para tela de carregamento
             document.getElementById('form-screen').classList.remove('active-screen');
-            document.getElementById('success-screen').classList.add('active-screen');
+            document.getElementById('loading-screen').classList.add('active-screen');
             window.scrollTo(0,0);
+
+            // Inicia o processo do PDF e WhatsApp
+            generateDownloadAndSend(clientName);
         });
 
-
-        // === 4. GERAR PDF FINAL ===
-        function generatePDF() {
+        function generateDownloadAndSend(clientName) {
             const element = document.getElementById('pdf-template');
-            const clientName = document.getElementById('clientName').value || "Cliente";
-            
             const opt = {
                 margin: 5,
                 filename: `OS_${clientName.replace(/\s+/g, '_')}.pdf`,
@@ -416,38 +380,39 @@
             
             element.style.position = "static";
             element.style.left = "0";
-            
-            // Renderiza o PDF com os dados
-            html2pdf().set(opt).from(element).save().then(() => {
+
+            // Gera o PDF como formato BLOB (arquivo binário)
+            html2pdf().set(opt).from(element).output('blob').then(function(pdfBlob) {
                 element.style.position = "absolute";
                 element.style.left = "-9999px";
+
+                // --- 1. DOWNLOAD AUTOMÁTICO PARA O TÉCNICO ---
+                const fileUrl = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = fileUrl;
+                a.download = opt.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // --- 2. PREPARAR DADOS PARA O WHATSAPP ---
+                const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
+                // Garante que a mensagem vai direto para o telefone do cliente
+                const wpp = rawWpp.startsWith('55') ? rawWpp : `55${rawWpp}`;
+                
+                const shop = document.getElementById('shopPhone').value;
+                const msg = `*ORDEM DE SERVIÇO GERADA*%0A%0AOlá ${clientName}, sua Ordem de Serviço foi registrada.%0A%0A_Estou enviando o arquivo PDF com todos os detalhes do serviço logo abaixo._%0A%0AQualquer dúvida, entre em contato: ${shop}`;
+
+                // --- 3. REDIRECIONAR APÓS UM PEQUENO DELAY (para garantir que o download inicie) ---
+                setTimeout(() => {
+                    // Abre o chat específico do cliente
+                    window.open(`https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`, '_blank');
+                    
+                    // Mostra a tela final no sistema original
+                    document.getElementById('loading-screen').classList.remove('active-screen');
+                    document.getElementById('success-screen').classList.add('active-screen');
+                }, 1000);
             });
-        }
-
-
-        // === 5. ENVIAR PARA O WHATSAPP DO CLIENTE ===
-        function sendWhatsApp() {
-            const name = document.getElementById('clientName').value;
-            const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
-            const wpp = rawWpp.startsWith('55') ? rawWpp : `55${rawWpp}`;
-            
-            const demand = document.getElementById('serviceDemand').value;
-            const service = document.getElementById('finalService').value;
-            const price = document.getElementById('servicePrice').value;
-            const type = document.getElementById('deliveryType').value;
-            const shop = document.getElementById('shopPhone').value;
-            const payment = document.getElementById('paymentMethod').value;
-
-            const msg = `*ORDEM DE SERVIÇO - RESUMO*%0A%0A` +
-                        `👤 *Cliente:* ${name}%0A` +
-                        `📱 *Aparelho/Demanda:* ${demand}%0A` +
-                        `🔧 *Serviço a Realizar:* ${service}%0A` +
-                        `💰 *Valor Total:* R$ ${price}%0A` +
-                        `💳 *Formato de Pagamento:* ${payment}%0A` +
-                        `📦 *Modalidade:* ${type}%0A%0A` +
-                        `_Sua Ordem de Serviço foi gerada com sucesso. Qualquer dúvida, retorne neste contato: ${shop}_`;
-
-            window.open(`https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`, '_blank');
         }
     </script>
 </body>
