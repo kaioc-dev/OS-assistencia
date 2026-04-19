@@ -66,6 +66,7 @@
             font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
         }
         .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #16a34a; color: white; }
         .btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
         .btn-small { padding: 8px; font-size: 0.85rem; margin-top: 5px; }
 
@@ -209,19 +210,22 @@
     <div id="loading-screen" class="container screen" style="text-align: center; padding: 40px 20px;">
         <h2 style="color: var(--primary);">Processando Arquivo...</h2>
         <div class="loader"></div>
-        <p style="color: #64748b; margin-top: 15px;">Gerando PDF e preparando o envio para o cliente.</p>
+        <p style="color: #64748b; margin-top: 15px;">Baixando PDF e preparando o WhatsApp.</p>
     </div>
 
     <div id="success-screen" class="container screen" style="text-align: center;">
         <header>
             <h1 style="color: #16a34a;">Processo Concluído!</h1>
-            <p>1. O PDF foi salvo no seu celular.</p>
-            <p>2. Você foi redirecionado para o WhatsApp do cliente.</p>
+            <p>Se o WhatsApp não abriu sozinho, clique no botão abaixo:</p>
         </header>
-        <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <strong>Lembrete:</strong> Ao abrir o WhatsApp, não se esqueça de clicar no clipe 📎 e anexar o PDF que foi baixado!
+        
+        <button id="btn-whatsapp" class="btn btn-success" style="margin-bottom: 15px;">📱 Ir para o WhatsApp</button>
+        
+        <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+            <strong>Lembrete:</strong> Ao abrir a conversa com o cliente, não se esqueça de clicar no clipe 📎 e anexar o PDF que acabou de ser baixado!
         </div>
-        <button class="btn btn-primary" onclick="window.location.reload()">➕ Criar Nova OS</button>
+        
+        <button class="btn btn-outline" onclick="window.location.reload()">➕ Criar Nova OS</button>
     </div>
 
     <div id="pdf-template">
@@ -337,11 +341,11 @@
         canvas.addEventListener('touchstart', startPosition, { passive: false }); canvas.addEventListener('touchend', endPosition); canvas.addEventListener('touchmove', draw, { passive: false });
         initCanvas();
 
-        // Fluxo Automático Completo
+        // Fluxo Automático
         document.getElementById('osForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Popula os dados
+            // Popula os dados no PDF invisível
             document.getElementById('pdf-shopPhone').innerText = document.getElementById('shopPhone').value;
             const clientName = document.getElementById('clientName').value;
             document.getElementById('pdf-clientName').innerText = clientName;
@@ -364,7 +368,7 @@
             document.getElementById('loading-screen').classList.add('active-screen');
             window.scrollTo(0,0);
 
-            // Inicia o processo do PDF e WhatsApp
+            // Inicia geração
             generateDownloadAndSend(clientName);
         });
 
@@ -381,37 +385,31 @@
             element.style.position = "static";
             element.style.left = "0";
 
-            // Gera o PDF como formato BLOB (arquivo binário)
-            html2pdf().set(opt).from(element).output('blob').then(function(pdfBlob) {
+            // 1. Gera e salva o PDF nativamente (mais seguro para mobile)
+            html2pdf().set(opt).from(element).save().then(function() {
                 element.style.position = "absolute";
                 element.style.left = "-9999px";
 
-                // --- 1. DOWNLOAD AUTOMÁTICO PARA O TÉCNICO ---
-                const fileUrl = URL.createObjectURL(pdfBlob);
-                const a = document.createElement('a');
-                a.href = fileUrl;
-                a.download = opt.filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                // --- 2. PREPARAR DADOS PARA O WHATSAPP ---
+                // 2. Prepara os dados do WhatsApp
                 const rawWpp = document.getElementById('clientWpp').value.replace(/\D/g, '');
-                // Garante que a mensagem vai direto para o telefone do cliente
                 const wpp = rawWpp.startsWith('55') ? rawWpp : `55${rawWpp}`;
-                
                 const shop = document.getElementById('shopPhone').value;
                 const msg = `*ORDEM DE SERVIÇO GERADA*%0A%0AOlá ${clientName}, sua Ordem de Serviço foi registrada.%0A%0A_Estou enviando o arquivo PDF com todos os detalhes do serviço logo abaixo._%0A%0AQualquer dúvida, entre em contato: ${shop}`;
+                const wppUrl = `https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`;
 
-                // --- 3. REDIRECIONAR APÓS UM PEQUENO DELAY (para garantir que o download inicie) ---
+                // Prepara o botão manual caso o automático falhe
+                document.getElementById('btn-whatsapp').onclick = function() {
+                    window.location.href = wppUrl;
+                };
+
+                // Troca as telas
+                document.getElementById('loading-screen').classList.remove('active-screen');
+                document.getElementById('success-screen').classList.add('active-screen');
+
+                // 3. Tenta redirecionar automaticamente para o app do WhatsApp usando location.href (evita popup blocker)
                 setTimeout(() => {
-                    // Abre o chat específico do cliente
-                    window.open(`https://api.whatsapp.com/send?phone=${wpp}&text=${msg}`, '_blank');
-                    
-                    // Mostra a tela final no sistema original
-                    document.getElementById('loading-screen').classList.remove('active-screen');
-                    document.getElementById('success-screen').classList.add('active-screen');
-                }, 1000);
+                    window.location.href = wppUrl;
+                }, 800);
             });
         }
     </script>
